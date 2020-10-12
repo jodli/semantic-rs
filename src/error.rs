@@ -1,11 +1,10 @@
-use git2::Error as GitError;
-use std::env::VarError;
-use std::error::Error as StdError;
-use std::io::Error as IoError;
-use hubcaps::Error as HubcapsError;
-
-use std::fmt;
 use std::convert::From;
+use std::env::VarError;
+use std::fmt;
+use std::io::Error as IoError;
+
+use git2::Error as GitError;
+use hubcaps::Error as HubcapsError;
 
 use self::Error::*;
 
@@ -48,18 +47,6 @@ impl fmt::Display for Error {
             Var(ref e) => e.fmt(f),
             Io(ref e) => e.fmt(f),
             GitHub(ref e) => e.fmt(f),
-        }
-
-    }
-}
-
-impl StdError for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Git(ref e) => e.description(),
-            Var(ref e) => e.description(),
-            Io(ref e) => e.description(),
-            GitHub(ref e) => e.description(),
         }
     }
 }

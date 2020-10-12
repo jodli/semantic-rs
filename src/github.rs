@@ -4,8 +4,10 @@ use hyper_native_tls::NativeTlsClient;
 use hubcaps::{Github, Credentials};
 use hubcaps::releases::ReleaseOptions;
 use error::Error;
+
+use crate::config::Config;
+
 use super::USERAGENT;
-use config::Config;
 
 pub fn can_release(config: &Config) -> bool {
     let repo = &config.repository;
