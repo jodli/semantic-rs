@@ -108,7 +108,7 @@ mod tests {
 
     #[test]
     fn write_new_version_number() {
-        let new_toml_file = file_with_new_version(example_file(), "0.2.0".into());
+        let new_toml_file = file_with_new_version(example_file(), "0.2.0");
         let expected_file = "[package]
     name = \"semantic-rs\"
     version = \"0.2.0\"

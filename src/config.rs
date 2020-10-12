@@ -130,7 +130,7 @@ impl ConfigBuilder {
         Config {
             user: self.user,
             repository_name: self.repository_name,
-            branch: self.branch.unwrap_or("master".into()),
+            branch: self.branch.unwrap_or_else(|| "master".into()),
             repository_path: self.repository_path.unwrap(),
             write_mode: self.write_mode,
             release_mode: self.release_mode,
@@ -138,7 +138,7 @@ impl ConfigBuilder {
             signature: self.signature.unwrap(),
             gh_token: self.gh_token,
             cargo_token: self.cargo_token,
-            remote: self.remote.unwrap_or(Err("No remote found".into())),
+            remote: self.remote.unwrap_or_else(|| Err("No remote found".into())),
         }
     }
 }

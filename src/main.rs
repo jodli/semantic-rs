@@ -36,10 +36,10 @@ mod preflight;
 mod toml_file;
 mod utils;
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-const USERAGENT: &'static str = concat!("semantic-rs/", env!("CARGO_PKG_VERSION"));
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+const USERAGENT: &str = concat!("semantic-rs/", env!("CARGO_PKG_VERSION"));
 
-const COMMITTER_ERROR_MESSAGE: &'static str = r"
+const COMMITTER_ERROR_MESSAGE: &str = r"
 A release commit needs a committer name and email address.
 We tried fetching it from different locations, but couldn't find one.
 
@@ -66,10 +66,7 @@ macro_rules! print_exit {
 }
 
 fn string_to_bool(answer: &str) -> bool {
-    match &answer.to_lowercase()[..] {
-        "yes" | "true" | "1" => true,
-        _ => false,
-    }
+    matches!(&answer.to_lowercase()[..], "yes" | "true" | "1")
 }
 
 fn version_bump(version: &Version, bump: CommitType) -> Option<Version> {
@@ -170,7 +167,7 @@ fn release_on_cratesio(config: &config::Config) {
     }
 }
 
-fn generate_changelog(repository_path: &str, version: &Version, new_version: &String) -> String {
+fn generate_changelog(repository_path: &str, version: &Version, new_version: &str) -> String {
     logger::stdout(format!("New version would be: {}", new_version));
     logger::stdout("Would write the following Changelog:");
     match changelog::generate(repository_path, &version.to_string(), new_version) {
