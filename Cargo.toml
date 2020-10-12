@@ -1,7 +1,7 @@
 [package]
 name = "semantic-rs"
 version = "1.0.0"
-authors = ["Jan Schulte <hello@unexpected-co.de>", "Jan-Erik Rediger <janerik@fnordig.de>"]
+authors = ["Jan Schulte <hello@unexpected-co.de>", "Jan-Erik Rediger <janerik@fnordig.de>", "Sebastian Mandrean <sebastian.mandrean@gmail.com>"]
 edition = "2018"
 description = "Automatic crate publishing"
 license = "MIT"

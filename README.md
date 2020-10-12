@@ -1,12 +1,14 @@
 # semantic-rs
 
-[![Build Status](https://travis-ci.org/semantic-rs/semantic-rs.svg?branch=master)](https://travis-ci.org/semantic-rs/semantic-rs)
-
 The purpose of this tool is to help people to publish crates following the [semver](http://semver.org/) specification.
 
 Right now if you're building a new crate publishing new versions includes a high amount of work. You need to decide if the new version will be either a new Major, Minor or Patch version. If that decision is made, the next step is to write a changelog with all the things changed. Then increase the version in `Cargo.toml`. Make a commit and a new tag for the new version and lastly publish it to crates.io.
 If you need to repeat these steps every time, chances are high you make mistakes.
 semantic-rs automates all these steps for you so you can focus more on developing new features instead.
+
+## Fork
+
+**NOTE:** This is a fork of [semantic-rs/semantic-rs](https://github.com/semantic-rs/semantic-rs) with various maintenance and patches applied.
 
 ## Workflow
 
@@ -96,7 +98,7 @@ cargo build
 Clone this project:
 
 ```bash
-$ git clone git@github.com:semantic-rs/semantic-rs.git
+$ git clone git@github.com:mandrean/semantic-rs.git
 ```
 
 As a test project you can use this one: [https://github.com/badboy/test-project](https://github.com/badboy/test-project).
@@ -120,7 +122,7 @@ Then you can run semantic-rs against the test project:
 
 ```bash
 $ cargo run -- -p ../test-project
-   Compiling semantic-rs v0.1.0 (file:///Users/janschulte/projects/semantic-rs/semantic-rs)
+   Compiling semantic-rs v0.1.0 (~/src/github.com/mandrean/semantic-rs)
      Running `target/debug/semantic-rs -p ../test-project`
 semantic.rs 🚀
 Analyzing your repository
@@ -161,8 +163,8 @@ Make sure to set the `CI=true` environment variable to disable dry-run mode.
 
 ## Contributing
 
-Bug reports and pull requests are welcome on [GitHub](https://github.com/semantic-rs/semantic-rs).
-You can find more information about contributing in the [CONTRIBUTING.md](https://github.com/semantic-rs/semantic-rs/blob/master/CONTRIBUTING.md).
+Bug reports and pull requests are welcome on [GitHub](https://github.com/mandrean/semantic-rs).
+You can find more information about contributing in the [CONTRIBUTING.md](https://github.com/mandrean/semantic-rs/blob/master/CONTRIBUTING.md).
 This project is intended to be a safe, welcoming space for collaboration and discussion, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org/version/1/3/0/) code of conduct.
 
 ## License

@@ -349,7 +349,7 @@ fn main() {
 
     let clap_args =  App::new("semantic-rs")
         .version(VERSION)
-        .author("Jan Schulte <hello@unexpected-code> & Jan-Erik Rediger <janerik@fnordig.de>")
+        .author("Fork by Sebastian Mandrean <sebastian.mandrean@gmail.com>")
         .about("Crate publishing done right")
         .arg(Arg::with_name("write")
              .short("w")
