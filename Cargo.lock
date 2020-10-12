@@ -126,6 +126,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e4cec68f03f32e44924783795810fa50a7035d8c8ebe78580ad7e6c703fba38"
 
 [[package]]
+name = "cargo_toml"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "513d17226888c7b8283ac02a1c1b0d8a9d4cbf6db65dfadb79f598f5d7966fe9"
+dependencies = [
+ "serde 1.0.116",
+ "serde_derive 1.0.116",
+ "toml 0.5.7",
+]
+
+[[package]]
 name = "cc"
 version = "1.0.61"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -182,7 +193,7 @@ checksum = "91609eb168015f6d1f25c9572485101e5b3019cef422cdc5381ff60acf755f12"
 dependencies = [
  "regex 0.1.80",
  "time",
- "toml",
+ "toml 0.1.30",
 ]
 
 [[package]]
@@ -1445,6 +1456,7 @@ dependencies = [
 name = "semantic-rs"
 version = "1.0.0"
 dependencies = [
+ "cargo_toml",
  "clap",
  "clippy",
  "clog",
@@ -1453,10 +1465,9 @@ dependencies = [
  "git2",
  "hubcaps",
  "regex 0.1.80",
- "rustc-serialize",
  "semver",
  "term 0.2.14",
- "toml",
+ "toml 0.5.7",
  "travis-after-all",
  "url 1.7.2",
 ]
@@ -1797,6 +1808,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0590d72182e50e879c4da3b11c6488dae18fccb1ae0c7a3eda18e16795844796"
 dependencies = [
  "rustc-serialize",
+]
+
+[[package]]
+name = "toml"
+version = "0.5.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75cf45bb0bef80604d001caaec0d09da99611b3c0fd39d3080468875cdb65645"
+dependencies = [
+ "serde 1.0.116",
 ]
 
 [[package]]

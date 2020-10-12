@@ -1,10 +1,11 @@
-use toml::Parser;
-use regex::Regex;
-use std::io::prelude::*;
 use std::fs::File;
-use std::io::Error;
 use std::fs::OpenOptions;
+use std::io::prelude::*;
+use std::io::Error;
 use std::path::Path;
+
+use cargo_toml::Manifest;
+use regex::Regex;
 
 #[derive(Debug)]
 pub enum TomlError {
@@ -13,18 +14,16 @@ pub enum TomlError {
 }
 
 pub fn read_version(file: String) -> Option<String> {
-    let file_map = Parser::new(&file).parse().unwrap();
-    let package = match file_map.get("package") {
-        Some(package) => package,
-        None => return None
+    let manifest: Manifest = match toml::from_str(&file) {
+        Ok(manifest) => manifest,
+        Err(_) => return None,
     };
-    let version = package.as_table()
-        .unwrap()
-        .get("version");
-    match version {
-        Some(v) => Some(v.as_str().unwrap().into()),
-        None => None
-    }
+    let package = match manifest.package {
+        Some(package) => package,
+        None => return None,
+    };
+
+    Some(package.version).filter(|v| !v.is_empty())
 }
 
 pub fn file_with_new_version(file: String, new_version: &str) -> String {

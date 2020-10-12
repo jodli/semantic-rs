@@ -17,7 +17,6 @@ extern crate futures;
 extern crate git2;
 extern crate hubcaps;
 extern crate regex;
-extern crate rustc_serialize;
 extern crate semver;
 extern crate toml;
 extern crate travis_after_all;
