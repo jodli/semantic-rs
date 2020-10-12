@@ -15,10 +15,13 @@ clog = "0.9"
 env_logger = "0.7"
 futures = "0.3"
 git2 = "0.13"
-hubcaps = "0.6"
 regex = "1.4"
 semver = "0.11"
 term = "0.6"
 toml = "0.5"
-travis-after-all = "2.0"
 url = "2.1"
+
+[dependencies.hubcaps]
+version = "0.6"
+default-features = false
+features = ["rustls-tls"]
