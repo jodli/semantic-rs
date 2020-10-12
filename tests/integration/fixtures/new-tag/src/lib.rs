@@ -1,3 +1,2 @@
 #[test]
-fn works() {
-}
+fn works() {}

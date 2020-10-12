@@ -1,15 +1,3 @@
-mod cargo;
-mod changelog;
-mod commit_analyzer;
-mod config;
-mod error;
-mod git;
-mod github;
-mod logger;
-mod preflight;
-mod toml_file;
-mod utils;
-
 extern crate clap;
 extern crate clog;
 extern crate env_logger;
@@ -22,19 +10,31 @@ extern crate toml;
 extern crate travis_after_all;
 extern crate url;
 
-use clap::{App, Arg, ArgMatches};
-use semver::Version;
-use std::error::Error;
 use std::path::Path;
 use std::process;
 use std::thread;
 use std::time::Duration;
 use std::{env, fs};
+
+use clap::{App, Arg, ArgMatches};
+use semver::Version;
 use travis_after_all::Build;
 
 use crate::commit_analyzer::CommitType;
 use crate::config::ConfigBuilder;
 use crate::utils::user_repo_from_url;
+
+mod cargo;
+mod changelog;
+mod commit_analyzer;
+mod config;
+mod error;
+mod git;
+mod github;
+mod logger;
+mod preflight;
+mod toml_file;
+mod utils;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 const USERAGENT: &'static str = concat!("semantic-rs/", env!("CARGO_PKG_VERSION"));
@@ -224,12 +224,8 @@ fn get_repo(repository_path: &str) -> git2::Repository {
 
 fn get_repository_path(matches: &ArgMatches) -> String {
     let path = Path::new(matches.value_of("path").unwrap_or("."));
-    let path = fs::canonicalize(path).unwrap_or_else(|_| {
-        print_exit!(
-            "Path does not exist or a component is
-                                                            not a directory"
-        )
-    });
+    let path = fs::canonicalize(path)
+        .unwrap_or_else(|_| print_exit!("Path does not exist or a component is not a directory"));
     let repo_path = path
         .to_str()
         .unwrap_or_else(|| print_exit!("Path is not valid unicode"));

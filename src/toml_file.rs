@@ -10,7 +10,7 @@ use regex::Regex;
 #[derive(Debug)]
 pub enum TomlError {
     Parse(&'static str),
-    Io(Error)
+    Io(Error),
 }
 
 pub fn read_version(file: String) -> Option<String> {
@@ -36,12 +36,12 @@ pub fn read_from_file(repository_path: &str) -> Result<String, TomlError> {
     let file_path = Path::new(&repository_path).join("Cargo.toml");
     let cargo_file = match read_cargo_toml(&file_path) {
         Ok(buffer) => buffer,
-        Err(err) => return Err(TomlError::Io(err))
+        Err(err) => return Err(TomlError::Io(err)),
     };
 
     match read_version(cargo_file) {
         Some(version) => Ok(version),
-        None => Err(TomlError::Parse("No version field found"))
+        None => Err(TomlError::Parse("No version field found")),
     }
 }
 
@@ -56,22 +56,21 @@ pub fn write_new_version(repository_path: &str, new_version: &str) -> Result<(),
 fn read_cargo_toml(file_path: &Path) -> Result<String, Error> {
     let mut handle = match File::open(file_path) {
         Ok(handle) => handle,
-        Err(err) => {
-            return Err(err)
-        }
+        Err(err) => return Err(err),
     };
 
     let mut buffer = String::new();
     match handle.read_to_string(&mut buffer) {
         Ok(_) => Ok(buffer),
-        Err(err) => Err(err)
+        Err(err) => Err(err),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    extern crate toml;
     extern crate regex;
+    extern crate toml;
+
     use super::*;
 
     fn example_file() -> String {
@@ -81,7 +80,8 @@ mod tests {
     authors = [\"Jan Schulte <hello@unexpected-co.de>\"]
     [dependencies]
     term = \"0.2\"
-    toml = \"0.1\"".to_string()
+    toml = \"0.1\""
+            .to_string()
     }
 
     fn example_file_without_version() -> String {
@@ -90,7 +90,8 @@ mod tests {
     authors = [\"Jan Schulte <hello@unexpected-co.de>\"]
     [dependencies]
     term = \"0.2\"
-    toml = \"0.1\"".to_string()
+    toml = \"0.1\""
+            .to_string()
     }
 
     #[test]
@@ -108,14 +109,14 @@ mod tests {
     #[test]
     fn write_new_version_number() {
         let new_toml_file = file_with_new_version(example_file(), "0.2.0".into());
-        let expected_file =
-            "[package]
+        let expected_file = "[package]
     name = \"semantic-rs\"
     version = \"0.2.0\"
     authors = [\"Jan Schulte <hello@unexpected-co.de>\"]
     [dependencies]
     term = \"0.2\"
-    toml = \"0.1\"".to_string();
+    toml = \"0.1\""
+            .to_string();
         assert_eq!(new_toml_file, expected_file);
     }
 }
