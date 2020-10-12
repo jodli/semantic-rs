@@ -3,10 +3,6 @@
 setup() {
   cd $WORKSPACE
   unset CI
-  unset TRAVIS_PULL_REQUEST
-  unset TRAVIS_BRANCH
-  unset TRAVIS_BUILD_ID
-  unset TRAVIS_JOB_NUMBER
 }
 
 setup_dirs() {

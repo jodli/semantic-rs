@@ -7,7 +7,6 @@ extern crate hubcaps;
 extern crate regex;
 extern crate semver;
 extern crate toml;
-extern crate travis_after_all;
 extern crate url;
 
 use std::path::Path;
@@ -18,7 +17,6 @@ use std::{env, fs};
 
 use clap::{App, Arg, ArgMatches};
 use semver::Version;
-use travis_after_all::Build;
 
 use crate::commit_analyzer::CommitType;
 use crate::config::ConfigBuilder;
@@ -114,10 +112,6 @@ fn ci_env_set() -> bool {
 }
 
 fn current_branch(repo: &git2::Repository) -> Option<String> {
-    if let Ok(branch) = env::var("TRAVIS_BRANCH") {
-        return Some(branch);
-    }
-
     let head = repo.head().expect("No HEAD found for repository");
 
     if head.is_branch() {
@@ -129,12 +123,6 @@ fn current_branch(repo: &git2::Repository) -> Option<String> {
 }
 
 fn is_release_branch(current: &str, release: &str) -> bool {
-    if let Ok(pr) = env::var("TRAVIS_PULL_REQUEST") {
-        if pr != "false" {
-            return false;
-        }
-    }
-
     current == release
 }
 
@@ -406,26 +394,6 @@ fn main() {
 
     for warning in warnings {
         logger::warn(format!(">> {}", warning));
-    }
-
-    if config.release_mode && ci_env_set() {
-        let build_run = Build::from_env().unwrap_or_else(|e| {
-            print_exit!("CI mode, but can't check other builds. Error: {:?}", e)
-        });
-
-        if !build_run.is_leader() {
-            println!("Not the build leader. Nothing to do. Bye.");
-            process::exit(0);
-        }
-
-        println!("I am the build leader. Waiting for other jobs to finish.");
-        match build_run.wait_for_others() {
-            Ok(()) => println!("Other jobs finished and succeeded. Doing my work now."),
-            Err(travis_after_all::Error::FailedBuilds) => {
-                print_exit!("Some builds failed. Stopping here.");
-            }
-            Err(e) => print_exit!("Waiting for other builds failed. Reason: {:?}", e),
-        }
     }
 
     let version = toml_file::read_from_file(&config.repository_path)
