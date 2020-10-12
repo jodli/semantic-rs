@@ -352,7 +352,7 @@ fn assemble_configuration(args: ArgMatches) -> config::Config {
 }
 
 fn main() {
-    env_logger::init().expect("Can't instantiate env logger");
+    env_logger::try_init().expect("Can't instantiate env logger");
     println!("semantic.rs 🚀");
 
     let clap_args =  App::new("semantic-rs")
