@@ -1,4 +1,3 @@
-use futures::executor::block_on;
 use hubcaps::releases::ReleaseOptions;
 use hubcaps::{Credentials, Github};
 
@@ -6,6 +5,7 @@ use crate::config::Config;
 use crate::error::Error;
 
 use super::USERAGENT;
+use tokio::runtime::Runtime;
 
 pub fn can_release(config: &Config) -> bool {
     let repo = &config.repository;
@@ -45,7 +45,9 @@ pub fn release(config: &Config, tag_name: &str, tag_message: &str) -> Result<(),
     let repo = github.repo(user, repo_name);
     let release = repo.releases();
 
-    block_on(release.create(&opts))
+    Runtime::new()
+        .expect("Failed to create Tokio runtime")
+        .block_on(release.create(&opts))
         .map(|_| ())
         .map_err(Error::from)
 }

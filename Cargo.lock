@@ -1181,12 +1181,12 @@ dependencies = [
  "clap",
  "clog",
  "env_logger",
- "futures",
  "git2",
  "hubcaps",
  "regex 1.4.0",
  "semver",
  "term",
+ "tokio",
  "toml 0.5.7",
  "url",
 ]

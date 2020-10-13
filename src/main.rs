@@ -1,11 +1,11 @@
 extern crate clap;
 extern crate clog;
 extern crate env_logger;
-extern crate futures;
 extern crate git2;
 extern crate hubcaps;
 extern crate regex;
 extern crate semver;
+extern crate tokio;
 extern crate toml;
 extern crate url;
 
