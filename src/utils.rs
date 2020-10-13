@@ -55,7 +55,7 @@ mod test {
         ];
 
         for url in &urls {
-            println!("Testing '{:?}'", url);
+            info!("Testing '{:?}'", url);
             let (user, repo) = user_repo_from_url(url).unwrap();
 
             assert_eq!("user", user);
@@ -72,7 +72,7 @@ mod test {
         )];
 
         for &(url, exp_user, exp_repo) in &urls {
-            println!("Testing '{:?}'", url);
+            info!("Testing '{:?}'", url);
             let (user, repo) = user_repo_from_url(url).unwrap();
 
             assert_eq!(exp_user, user);
@@ -89,7 +89,7 @@ mod test {
         ];
 
         for url in &urls {
-            println!("Testing '{:?}'", url);
+            info!("Testing '{:?}'", url);
             assert!(user_repo_from_url(url).is_err());
         }
     }

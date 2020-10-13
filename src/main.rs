@@ -3,19 +3,23 @@ extern crate clog;
 extern crate env_logger;
 extern crate git2;
 extern crate hubcaps;
+#[macro_use]
+extern crate log;
 extern crate regex;
 extern crate semver;
 extern crate tokio;
 extern crate toml;
 extern crate url;
 
+use std::io::Write;
 use std::path::Path;
-use std::process;
+use std::process::exit;
 use std::thread;
 use std::time::Duration;
 use std::{env, fs};
 
 use clap::{App, Arg, ArgMatches};
+use env_logger::{fmt::Color, Builder, Env};
 use semver::Version;
 
 use crate::commit_analyzer::CommitType;
@@ -29,7 +33,6 @@ mod config;
 mod error;
 mod git;
 mod github;
-mod logger;
 mod preflight;
 mod toml_file;
 mod utils;
@@ -52,14 +55,25 @@ Local repository config
 User config
 Global config";
 
-macro_rules! print_exit {
+macro_rules! info_exit {
     ($fmt:expr) => {{
-        logger::stderr($fmt);
-        process::exit(1);
+        info!($fmt);
+        exit(0);
     }};
     ($fmt:expr, $($arg:tt)*) => {{
-        logger::stderr(format!($fmt, $($arg)*));
-        process::exit(1);
+        info!($fmt, $($arg)*);
+        exit(0);
+    }};
+}
+
+macro_rules! error_exit {
+    ($fmt:expr) => {{
+        error!($fmt);
+        exit(1);
+    }};
+    ($fmt:expr, $($arg:tt)*) => {{
+        error!($fmt, $($arg)*);
+        exit(1);
     }};
 }
 
@@ -127,73 +141,72 @@ fn is_release_branch(current: &str, release: &str) -> bool {
 }
 
 fn push_to_github(config: &config::Config, tag_name: &str) {
-    logger::stdout("Pushing new commit and tag");
+    info!("Pushing new commit and tag");
     git::push(&config, &tag_name)
-        .unwrap_or_else(|err| print_exit!("Failed to push git: {:?}", err));
+        .unwrap_or_else(|err| error_exit!("Failed to push git: {:?}", err));
 
-    logger::stdout("Waiting a tiny bit, so GitHub can store the git tag");
+    info!("Waiting a tiny bit, so GitHub can store the git tag");
     thread::sleep(Duration::from_secs(1));
 }
 
 fn release_on_github(config: &config::Config, tag_message: &str, tag_name: &str) {
     if github::can_release(&config) {
-        logger::stdout("Creating GitHub release");
+        info!("Creating GitHub release");
         github::release(&config, &tag_name, &tag_message)
-            .unwrap_or_else(|err| print_exit!("Failed to create GitHub release: {:?}", err));
+            .unwrap_or_else(|err| error_exit!("Failed to create GitHub release: {:?}", err));
     } else {
-        logger::stdout("Project not hosted on GitHub. Skipping release step");
+        info!("Project not hosted on GitHub. Skipping release step");
     }
 }
 
 fn release_on_cratesio(config: &config::Config) {
-    logger::stdout("Publishing crate on crates.io");
+    info!("Publishing crate on crates.io");
     if !cargo::publish(
         &config.repository_path,
         &config.cargo_token.as_ref().unwrap(),
     ) {
-        print_exit!("Failed to publish on crates.io");
+        error_exit!("Failed to publish on crates.io");
     }
 }
 
 fn generate_changelog(repository_path: &str, version: &Version, new_version: &str) -> String {
-    logger::stdout(format!("New version would be: {}", new_version));
-    logger::stdout("Would write the following Changelog:");
+    info!("New version would be: {}", new_version);
+    info!("Would write the following Changelog:");
     match changelog::generate(repository_path, &version.to_string(), new_version) {
-        Ok(log) => log,
+        Ok(_log) => _log,
         Err(err) => {
-            logger::stderr(format!("Generating Changelog failed: {:?}", err));
-            process::exit(1)
+            error_exit!("Generating Changelog failed: {:?}", err);
         }
     }
 }
 
 fn write_changelog(repository_path: &str, version: &Version, new_version: &str) {
-    logger::stdout("Writing Changelog");
+    info!("Writing Changelog");
     changelog::write(repository_path, &version.to_string(), &new_version)
-        .unwrap_or_else(|err| print_exit!("Writing Changelog failed: {:?}", err));
+        .unwrap_or_else(|err| error!("Writing Changelog failed: {:?}", err));
 }
 
 fn print_changelog(changelog: &str) {
-    logger::stdout("====================================");
-    logger::stdout(changelog);
-    logger::stdout("====================================");
-    logger::stdout("Would create annotated git tag");
+    info!("====================================");
+    info!("{}", changelog);
+    info!("====================================");
+    info!("Would create annotated git tag");
 }
 
 fn package_crate(config: &config::Config, repository_path: &str, new_version: &str) {
     if config.release_mode {
-        logger::stdout("Updating lockfile");
+        info!("Updating lockfile");
         if !cargo::update_lockfile(repository_path) {
-            print_exit!("`cargo fetch` failed. See above for the cargo error message.");
+            error!("`cargo fetch` failed. See above for the cargo error message.");
         }
     }
 
     git::commit_files(&config, &new_version)
-        .unwrap_or_else(|err| print_exit!("Committing files failed: {:?}", err));
+        .unwrap_or_else(|err| error!("Committing files failed: {:?}", err));
 
-    logger::stdout("Package crate");
+    info!("Package crate");
     if !cargo::package(repository_path) {
-        print_exit!("`cargo package` failed. See above for the cargo error message.");
+        error!("`cargo package` failed. See above for the cargo error message.");
     }
 }
 
@@ -201,19 +214,19 @@ fn get_repo(repository_path: &str) -> git2::Repository {
     match git2::Repository::open(repository_path) {
         Ok(repo) => repo,
         Err(e) => {
-            logger::stderr(format!("Could not open the git repository: {:?}", e));
-            process::exit(1);
+            error_exit!("Could not open the git repository: {:?}", e);
         }
     }
 }
 
 fn get_repository_path(matches: &ArgMatches) -> String {
     let path = Path::new(matches.value_of("path").unwrap_or("."));
-    let path = fs::canonicalize(path)
-        .unwrap_or_else(|_| print_exit!("Path does not exist or a component is not a directory"));
-    let repo_path = path
-        .to_str()
-        .unwrap_or_else(|| print_exit!("Path is not valid unicode"));
+    let path = fs::canonicalize(path).unwrap_or_else(|_| {
+        error_exit!("Path does not exist or a component is not a directory");
+    });
+    let repo_path = path.to_str().unwrap_or_else(|| {
+        error_exit!("Path is not valid unicode");
+    });
     repo_path.to_string()
 }
 
@@ -222,12 +235,11 @@ fn get_signature<'a>(repository_path: String) -> git2::Signature<'a> {
     let signature = match git::get_signature(&repo) {
         Ok(sig) => sig,
         Err(e) => {
-            logger::stderr(format!(
+            error!(
                 "Failed to get the committer's name and email address: {}",
                 e.to_string()
-            ));
-            logger::stderr(COMMITTER_ERROR_MESSAGE);
-            process::exit(1);
+            );
+            error_exit!("{}", COMMITTER_ERROR_MESSAGE);
         }
     };
 
@@ -244,20 +256,17 @@ fn get_user_and_repo(repository_path: &str) -> Option<(String, String)> {
                 .expect("Remote URL is not valid UTF-8")
                 .to_owned();
             let (user, repo_name) = user_repo_from_url(&url).unwrap_or_else(|e| {
-                print_exit!(
+                error_exit!(
                     "Could not extract user and repository name from URL: {:?}",
                     e
-                )
+                );
             });
 
             Some((user, repo_name))
         }
         Err(err) => {
-            logger::warn(format!(
-                "Could not determine the origin remote url: {:?}",
-                err
-            ));
-            logger::warn("semantic-rs can't push changes or create a release on GitHub");
+            warn!("Could not determine the origin remote url: {:?}", err);
+            warn!("semantic-rs can't push changes or create a release on GitHub");
             None
         }
     }
@@ -331,9 +340,33 @@ fn assemble_configuration(args: ArgMatches) -> config::Config {
     config_builder.build()
 }
 
+fn init_logger() {
+    let env = Env::default()
+        .default_filter_or(log::Level::Info.to_string())
+        .default_write_style_or("auto");
+
+    Builder::from_env(env)
+        .format(|buf, record| {
+            let mut style = buf.style();
+            match record.level() {
+                log::Level::Info => writeln!(buf, "{}", record.args()),
+                log::Level::Warn => writeln!(buf, "{}: {}", record.level(), record.args()),
+                log::Level::Error => {
+                    style.set_color(Color::Red).set_bold(true);
+                    writeln!(buf, "{}: {}", style.value(record.level()), record.args())
+                }
+                _ => {
+                    style.set_color(Color::Yellow).set_bold(true);
+                    writeln!(buf, "{}: {}", style.value(record.level()), record.args())
+                }
+            }
+        })
+        .init();
+}
+
 fn main() {
-    env_logger::try_init().expect("Can't instantiate env logger");
-    println!("semantic.rs 🚀");
+    init_logger();
+    info!("semantic.rs 🚀");
 
     let clap_args =  App::new("semantic-rs")
         .version(VERSION)
@@ -367,16 +400,16 @@ fn main() {
 
     let config = assemble_configuration(clap_args);
 
-    let branch = current_branch(&config.repository)
-        .unwrap_or_else(|| print_exit!("Could not determine current branch."));
+    let branch = current_branch(&config.repository).unwrap_or_else(|| {
+        error_exit!("Could not determine current branch.");
+    });
 
     if !is_release_branch(&branch, &config.branch) {
-        println!(
+        info!(
             "Current branch is '{}', releases are only done from branch '{}'",
             branch, config.branch
         );
-        println!("No release done from a pull request either.");
-        process::exit(0);
+        info_exit!("No release done from a pull request either.");
     }
 
     //Before we actually start, we do perform some preflight checks
@@ -385,36 +418,36 @@ fn main() {
     //The important bit is, if something's missing, we do not abort since the user can still do all
     //other things except publishing
 
-    logger::stdout("Performing preflight checks now");
+    info!("Performing preflight checks now");
     let warnings = preflight::check(&config);
 
     if warnings.is_empty() {
-        logger::stdout("Checks done. Everything is ok");
+        info!("Checks done. Everything is ok");
     }
 
     for warning in warnings {
-        logger::warn(format!(">> {}", warning));
+        warn!("{}", warning);
     }
 
-    let version = toml_file::read_from_file(&config.repository_path)
-        .unwrap_or_else(|err| print_exit!("Reading `Cargo.toml` failed: {:?}", err));
+    let version = toml_file::read_from_file(&config.repository_path).unwrap_or_else(|err| {
+        error_exit!("Reading `Cargo.toml` failed: {:?}", err);
+    });
 
     let version = Version::parse(&version).expect("Not a valid version");
-    logger::stdout(format!("Current version: {}", version.to_string()));
+    info!("Current version: {}", version.to_string());
 
-    logger::stdout("Analyzing commits");
+    info!("Analyzing commits");
 
     let bump = git::version_bump_since_latest(&config.repository);
     if config.write_mode {
-        logger::stdout(format!("Commits analyzed. Bump will be {:?}", bump));
+        info!("Commits analyzed. Bump will be {:?}", bump);
     } else {
-        logger::stdout(format!("Commits analyzed. Bump would be {:?}", bump));
+        info!("Commits analyzed. Bump would be {:?}", bump);
     }
     let new_version = match version_bump(&version, bump) {
         Some(new_version) => new_version.to_string(),
         None => {
-            logger::stdout("No version bump. Nothing to do.");
-            process::exit(0);
+            info_exit!("No version bump. Nothing to do.");
         }
     };
 
@@ -422,22 +455,24 @@ fn main() {
         let changelog = generate_changelog(&config.repository_path, &version, &new_version);
         print_changelog(&changelog);
     } else {
-        logger::stdout(format!("New version: {}", new_version));
+        info!("New version: {}", new_version);
 
         toml_file::write_new_version(&config.repository_path, &new_version)
-            .unwrap_or_else(|err| print_exit!("Writing `Cargo.toml` failed: {:?}", err));
+            .unwrap_or_else(|err| error!("Writing `Cargo.toml` failed: {:?}", err));
 
         write_changelog(&config.repository_path, &version, &new_version);
         package_crate(&config, &config.repository_path, &new_version);
 
-        logger::stdout("Creating annotated git tag");
+        info!("Creating annotated git tag");
         let tag_message =
             changelog::generate(&config.repository_path, &version.to_string(), &new_version)
-                .unwrap_or_else(|err| print_exit!("Can't generate changelog: {:?}", err));
+                .unwrap_or_else(|err| {
+                    error_exit!("Can't generate changelog: {:?}", err);
+                });
 
         let tag_name = format!("v{}", new_version);
         git::tag(&config, &tag_name, &tag_message)
-            .unwrap_or_else(|err| print_exit!("Failed to create git tag: {:?}", err));
+            .unwrap_or_else(|err| error!("Failed to create git tag: {:?}", err));
 
         if config.release_mode && config.can_push() {
             push_to_github(&config, &tag_name);
@@ -449,7 +484,7 @@ fn main() {
 
         if config.release_mode && config.can_release_to_cratesio() {
             release_on_cratesio(&config);
-            println!(
+            info!(
                 "{} v{} is released. 🚀🚀🚀",
                 config.repository_name.unwrap(),
                 new_version
