@@ -1,2 +1,7 @@
-target
-tests/integration/bats
+.DS_Store
+.idea/
+target/
+tests/integration/bats/
+**/*.rs.bk
+**/*.parsed
+**/*.pretty
