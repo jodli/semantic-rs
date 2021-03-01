@@ -16,6 +16,7 @@ pub struct Config {
     pub repository: Repository,
     pub signature: Signature<'static>,
 
+    pub gh_username: Option<String>,
     pub gh_token: Option<String>,
     pub cargo_token: Option<String>,
 }
@@ -26,7 +27,7 @@ impl Config {
     }
 
     pub fn can_release_to_github(&self) -> bool {
-        self.can_push() && self.gh_token.is_some()
+        self.can_push() && self.gh_username.is_some() && self.gh_token.is_some()
     }
 
     pub fn can_release_to_cratesio(&self) -> bool {
@@ -50,6 +51,7 @@ pub struct ConfigBuilder {
     repository: Option<Repository>,
     signature: Option<Signature<'static>>,
 
+    gh_username: Option<String>,
     gh_token: Option<String>,
     cargo_token: Option<String>,
 }
@@ -65,6 +67,7 @@ impl ConfigBuilder {
             release_mode: false,
             repository: None,
             signature: None,
+            gh_username: None,
             gh_token: None,
             cargo_token: None,
             remote: None,
@@ -111,6 +114,11 @@ impl ConfigBuilder {
         self
     }
 
+    pub fn gh_username(&mut self, username: String) -> &mut Self {
+        self.gh_username = Some(username);
+        self
+    }
+
     pub fn gh_token(&mut self, token: String) -> &mut Self {
         self.gh_token = Some(token);
         self
@@ -136,6 +144,7 @@ impl ConfigBuilder {
             release_mode: self.release_mode,
             repository: self.repository.unwrap(),
             signature: self.signature.unwrap(),
+            gh_username: self.gh_username,
             gh_token: self.gh_token,
             cargo_token: self.cargo_token,
             remote: self.remote.unwrap_or_else(|| Err("No remote found".into())),

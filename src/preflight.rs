@@ -3,6 +3,10 @@ use crate::config::Config;
 pub fn check(config: &Config) -> Vec<String> {
     let mut warnings: Vec<String> = vec![];
 
+    if config.gh_username.is_none() {
+        warnings.push("The GH_USERNAME environment variable is not configured".into());
+    }
+
     if config.gh_token.is_none() {
         warnings.push("The GH_TOKEN environment variable is not configured".into());
     }

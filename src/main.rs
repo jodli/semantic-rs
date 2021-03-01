@@ -272,7 +272,7 @@ fn get_user_and_repo(repository_path: &str) -> Option<(String, String)> {
     }
 }
 
-fn get_github_token(repository_path: &str) -> Option<String> {
+fn get_github_creds(repository_path: &str) -> (Option<String>, Option<String>) {
     let repo = get_repo(repository_path);
     let remote_or_none = repo.find_remote("origin");
     match remote_or_none {
@@ -282,12 +282,12 @@ fn get_github_token(repository_path: &str) -> Option<String> {
                 .expect("Remote URL is not valid UTF-8")
                 .to_owned();
             if github::is_github_url(&url) {
-                env::var("GH_TOKEN").ok()
+                (env::var("GH_USERNAME").ok(), env::var("GH_TOKEN").ok())
             } else {
-                None
+                (None, None)
             }
         }
-        Err(_) => None,
+        Err(_) => (None, None),
     }
 }
 
@@ -324,7 +324,8 @@ fn assemble_configuration(args: ArgMatches) -> config::Config {
         config_builder.user(user);
         config_builder.repository_name(repo);
     }
-    if let Some(gh_token) = get_github_token(&repository_path) {
+    if let (Some(gh_username), Some(gh_token)) = get_github_creds(&repository_path) {
+        config_builder.gh_username(gh_username);
         config_builder.gh_token(gh_token);
     }
     if let Some(cargo_token) = get_cargo_token() {
