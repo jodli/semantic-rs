@@ -193,7 +193,7 @@ fn print_changelog(changelog: &str) {
     info!("Would create annotated git tag");
 }
 
-fn package_crate(config: &config::Config, repository_path: &str, new_version: &str) {
+fn commit_files(config: &config::Config, repository_path: &str, new_version: &str) {
     if config.release_mode {
         info!("Updating lockfile");
         if !cargo::update_lockfile(repository_path) {
@@ -203,11 +203,6 @@ fn package_crate(config: &config::Config, repository_path: &str, new_version: &s
 
     git::commit_files(&config, &new_version)
         .unwrap_or_else(|err| error!("Committing files failed: {:?}", err));
-
-    info!("Package crate");
-    if !cargo::package(repository_path) {
-        error!("`cargo package` failed. See above for the cargo error message.");
-    }
 }
 
 fn get_repo(repository_path: &str) -> git2::Repository {
@@ -469,7 +464,7 @@ fn main() {
             .unwrap_or_else(|err| error!("Writing `Cargo.toml` failed: {:?}", err));
 
         write_changelog(&config.repository_path, &version, &new_version);
-        package_crate(&config, &config.repository_path, &new_version);
+        commit_files(&config, &config.repository_path, &new_version);
 
         info!("Creating annotated git tag");
         let tag_message =
@@ -491,6 +486,10 @@ fn main() {
         }
 
         if config.release_mode && config.can_release_to_cratesio() {
+            info!("Package crate");
+            if !cargo::package(&config.repository_path) {
+                error!("`cargo package` failed. See above for the cargo error message.");
+            }
             release_on_cratesio(&config);
             info!(
                 "{} v{} is released. 🚀🚀🚀",
