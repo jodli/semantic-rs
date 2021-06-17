@@ -13,17 +13,31 @@ pub enum TomlError {
     Io(Error),
 }
 
-pub fn read_version(file: String) -> Option<String> {
-    let manifest: Manifest = match toml::from_str(&file) {
-        Ok(manifest) => manifest,
-        Err(_) => return None,
-    };
-    let package = match manifest.package {
-        Some(package) => package,
-        None => return None,
-    };
+fn read_manifest(file: &str) -> Option<Manifest> {
+    match toml::from_str(&file) {
+        Ok(manifest) => Some(manifest),
+        Err(_) => None,
+    }
+}
 
-    Some(package.version).filter(|v| !v.is_empty())
+fn read_workspace(file: &str) -> Option<Vec<String>> {
+    match read_manifest(file) {
+        Some(manifest) => match manifest.workspace {
+            Some(workspace) => Some(workspace.members),
+            None => None,
+        },
+        None => None,
+    }
+}
+
+pub fn read_version(file: &str) -> Option<String> {
+    match read_manifest(file) {
+        Some(manifest) => match manifest.package {
+            Some(package) => Some(package.version).filter(|v| !v.is_empty()),
+            None => None,
+        },
+        None => None,
+    }
 }
 
 pub fn file_with_new_version(file: String, new_version: &str) -> String {
@@ -32,17 +46,43 @@ pub fn file_with_new_version(file: String, new_version: &str) -> String {
     re.replace(&file, &new_version[..]).to_string()
 }
 
-pub fn read_from_file(repository_path: &str) -> Result<String, TomlError> {
-    let file_path = Path::new(&repository_path).join("Cargo.toml");
+pub fn read_from_file(crate_dir: &str, package: &str) -> Result<Vec<String>, TomlError> {
+    let file_path = Path::new(&crate_dir).join("Cargo.toml");
+    dbg!(&file_path);
     let cargo_file = match read_cargo_toml(&file_path) {
         Ok(buffer) => buffer,
         Err(err) => return Err(TomlError::Io(err)),
     };
 
-    match read_version(cargo_file) {
-        Some(version) => Ok(version),
-        None => Err(TomlError::Parse("No version field found")),
+    let mut versions = vec![];
+
+    if let Some(workspaces) = read_workspace(&cargo_file) {
+        let workspaces = workspaces
+            .into_iter()
+            .filter(|workspace| {
+                if package == "all" {
+                    true
+                } else {
+                    workspace == package
+                }
+            })
+            .collect::<Vec<String>>();
+        for workspace in workspaces {
+            dbg!(&workspace);
+            versions.append(
+                &mut read_from_file(
+                    Path::new(&crate_dir).join(workspace).to_str().unwrap(),
+                    package,
+                )
+                .unwrap(),
+            );
+        }
     }
+    if let Some(version) = read_version(&cargo_file) {
+        dbg!(&version);
+        versions.push(version);
+    }
+    Ok(versions)
 }
 
 pub fn write_new_version(repository_path: &str, new_version: &str) -> Result<(), Error> {
@@ -96,13 +136,13 @@ mod tests {
 
     #[test]
     fn read_version_number() {
-        let version_str = read_version(example_file());
+        let version_str = read_version(&example_file());
         assert_eq!(version_str, Some("0.1.0".into()));
     }
 
     #[test]
     fn read_file_without_version_number() {
-        let version_str = read_version(example_file_without_version());
+        let version_str = read_version(&example_file_without_version());
         assert_eq!(version_str, None);
     }
 
