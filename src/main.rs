@@ -465,7 +465,7 @@ fn main() {
     } else {
         info!("New version: {}", new_version);
 
-        toml_file::write_new_version(&config.repository_path, &new_version)
+        toml_file::write_new_version(&config.repository_path, &config.package, &new_version)
             .unwrap_or_else(|err| error!("Writing `Cargo.toml` failed: {:?}", err));
 
         write_changelog(&config.repository_path, &version, &new_version);

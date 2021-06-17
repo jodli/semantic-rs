@@ -48,7 +48,6 @@ pub fn file_with_new_version(file: String, new_version: &str) -> String {
 
 pub fn read_from_file(crate_dir: &str, package: &str) -> Result<Vec<String>, TomlError> {
     let file_path = Path::new(&crate_dir).join("Cargo.toml");
-    dbg!(&file_path);
     let cargo_file = match read_cargo_toml(&file_path) {
         Ok(buffer) => buffer,
         Err(err) => return Err(TomlError::Io(err)),
@@ -68,7 +67,6 @@ pub fn read_from_file(crate_dir: &str, package: &str) -> Result<Vec<String>, Tom
             })
             .collect::<Vec<String>>();
         for workspace in workspaces {
-            dbg!(&workspace);
             versions.append(
                 &mut read_from_file(
                     Path::new(&crate_dir).join(workspace).to_str().unwrap(),
@@ -79,18 +77,38 @@ pub fn read_from_file(crate_dir: &str, package: &str) -> Result<Vec<String>, Tom
         }
     }
     if let Some(version) = read_version(&cargo_file) {
-        dbg!(&version);
         versions.push(version);
     }
     Ok(versions)
 }
 
-pub fn write_new_version(repository_path: &str, new_version: &str) -> Result<(), Error> {
-    let file_path = Path::new(&repository_path).join("Cargo.toml");
-    let cargo_toml = read_cargo_toml(&file_path)?;
-    let new_cargo_toml = file_with_new_version(cargo_toml, new_version);
+pub fn write_new_version(crate_dir: &str, package: &str, new_version: &str) -> Result<(), Error> {
+    let file_path = Path::new(&crate_dir).join("Cargo.toml");
+    let cargo_file = read_cargo_toml(&file_path)?;
+
+    if let Some(workspaces) = read_workspace(&cargo_file) {
+        let workspaces = workspaces
+            .into_iter()
+            .filter(|workspace| {
+                if package == "all" {
+                    true
+                } else {
+                    workspace == package
+                }
+            })
+            .collect::<Vec<String>>();
+        for workspace in workspaces {
+            write_new_version(
+                Path::new(&crate_dir).join(workspace).to_str().unwrap(),
+                package,
+                new_version,
+            )
+            .unwrap();
+        }
+    }
+    let new_cargo_file = file_with_new_version(cargo_file, new_version);
     let mut handle = OpenOptions::new().read(true).write(true).open(file_path)?;
-    handle.write_all(new_cargo_toml.as_bytes())
+    handle.write_all(new_cargo_file.as_bytes())
 }
 
 fn read_cargo_toml(file_path: &Path) -> Result<String, Error> {
