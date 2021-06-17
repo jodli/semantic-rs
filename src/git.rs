@@ -40,12 +40,14 @@ fn format_commit(commit: Commit) -> String {
     format!("{}\n{}", commit.id(), commit.message().unwrap_or(""))
 }
 
-fn add<P: AsRef<Path>>(repo: &Repository, files: &[P]) -> Result<(), git2::Error> {
+fn add<T, I>(repo: &Repository, pathspecs: I) -> Result<(), git2::Error>
+where
+    T: git2::IntoCString,
+    I: IntoIterator<Item = T>,
+{
     let mut index = repo.index()?;
 
-    for path in files {
-        index.add_path(path.as_ref())?;
-    }
+    index.add_all(pathspecs, git2::IndexAddOption::DEFAULT, None)?;
 
     index.write()
 }
@@ -131,12 +133,12 @@ pub fn version_bump_since_tag(repo: &Repository, tag: &str) -> CommitType {
 }
 
 pub fn generate_commit_message(new_version: &str) -> String {
-    format!("Bump version to {}", new_version)
+    format!("chore: bump version to {}", new_version)
 }
 
 pub fn commit_files(config: &Config, new_version: &str) -> Result<(), Error> {
     let repo = &config.repository;
-    let files = ["Cargo.toml", "Cargo.lock", "Changelog.md"];
+    let files = ["**/Cargo.toml", "Cargo.lock", "Changelog.md"];
     let files = files
         .iter()
         .filter(|filename| {
