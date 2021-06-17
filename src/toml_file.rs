@@ -67,13 +67,13 @@ pub fn read_from_file(crate_dir: &str, package: &str) -> Result<Vec<String>, Tom
             })
             .collect::<Vec<String>>();
         for workspace in workspaces {
-            versions.append(
-                &mut read_from_file(
-                    Path::new(&crate_dir).join(workspace).to_str().unwrap(),
-                    package,
-                )
-                .unwrap(),
-            );
+            versions.append(&mut read_from_file(
+                Path::new(&crate_dir)
+                    .join(workspace)
+                    .to_str()
+                    .expect("could not build path to workspace"),
+                package,
+            )?);
         }
     }
     if let Some(version) = read_version(&cargo_file) {
@@ -99,11 +99,13 @@ pub fn write_new_version(crate_dir: &str, package: &str, new_version: &str) -> R
             .collect::<Vec<String>>();
         for workspace in workspaces {
             write_new_version(
-                Path::new(&crate_dir).join(workspace).to_str().unwrap(),
+                Path::new(&crate_dir)
+                    .join(workspace)
+                    .to_str()
+                    .expect("could not build path to workspace"),
                 package,
                 new_version,
-            )
-            .unwrap();
+            )?;
         }
     }
     let new_cargo_file = file_with_new_version(cargo_file, new_version);
