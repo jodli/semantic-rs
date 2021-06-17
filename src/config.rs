@@ -9,6 +9,7 @@ pub struct Config {
     pub remote: Result<String, String>,
 
     pub repository_path: String,
+    pub package: String,
 
     pub write_mode: bool,
     pub release_mode: bool,
@@ -42,6 +43,7 @@ pub struct ConfigBuilder {
     branch: Option<String>,
 
     repository_path: Option<String>,
+    package: Option<String>,
 
     remote: Option<Result<String, String>>,
 
@@ -63,6 +65,7 @@ impl ConfigBuilder {
             repository_name: None,
             branch: None,
             repository_path: None,
+            package: None,
             write_mode: false,
             release_mode: false,
             repository: None,
@@ -91,6 +94,11 @@ impl ConfigBuilder {
 
     pub fn repository_path(&mut self, path: String) -> &mut Self {
         self.repository_path = Some(path);
+        self
+    }
+
+    pub fn package(&mut self, package: String) -> &mut Self {
+        self.package = Some(package);
         self
     }
 
@@ -140,6 +148,7 @@ impl ConfigBuilder {
             repository_name: self.repository_name,
             branch: self.branch.unwrap_or_else(|| "master".into()),
             repository_path: self.repository_path.unwrap(),
+            package: self.package.unwrap(),
             write_mode: self.write_mode,
             release_mode: self.release_mode,
             repository: self.repository.unwrap(),

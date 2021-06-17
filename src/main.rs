@@ -314,11 +314,11 @@ fn assemble_configuration(args: ArgMatches) -> config::Config {
     // We can only release, if we are allowed to write
     let release_mode = write_mode && release_flag;
     let repository_path = get_repository_path(&args);
-
     config_builder.write(write_mode);
     config_builder.release(release_mode);
     config_builder.branch(args.value_of("branch").unwrap_or("master").to_string());
     config_builder.repository_path(repository_path.clone());
+    config_builder.package(args.value_of("package").unwrap_or("all").into());
     config_builder.signature(get_signature(repository_path.clone()));
     if let Some((user, repo)) = get_user_and_repo(&repository_path) {
         config_builder.user(user);
@@ -397,6 +397,11 @@ fn main() {
              .help("Specifies the repository path. [default: .]")
              .value_name("PATH")
              .takes_value(true))
+        .arg(Arg::with_name("package")
+             .long("package")
+             .help("Specifies the package. [default: all]")
+             .value_name("PACKAGE")
+             .takes_value(true))
         .get_matches();
 
     let config = assemble_configuration(clap_args);
@@ -430,10 +435,12 @@ fn main() {
         warn!("{}", warning);
     }
 
-    let version = toml_file::read_from_file(&config.repository_path).unwrap_or_else(|err| {
-        error_exit!("Reading `Cargo.toml` failed: {:?}", err);
-    });
+    let versions = toml_file::read_from_file(&config.repository_path, &config.package)
+        .unwrap_or_else(|err| {
+            error_exit!("Reading `Cargo.toml` failed: {:?}", err);
+        });
 
+    let version = &versions[0];
     let version = Version::parse(&version).expect("Not a valid version");
     info!("Current version: {}", version.to_string());
 
